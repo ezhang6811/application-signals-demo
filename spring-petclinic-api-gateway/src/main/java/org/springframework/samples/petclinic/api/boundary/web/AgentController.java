@@ -1,9 +1,12 @@
 package org.springframework.samples.petclinic.api.boundary.web;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.samples.petclinic.api.application.NutritionServiceClient;
+import org.springframework.samples.petclinic.api.dto.PetNutrition;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
@@ -35,6 +38,9 @@ public class AgentController {
     private final BedrockAgentCoreClient bedrockClient;
     private final String sessionId;
 
+    @Autowired
+    private NutritionServiceClient nutritionServiceClient;
+
     public AgentController(String region) {
         this.bedrockClient = BedrockAgentCoreClient.builder()
                 .region(Region.of(awsRegion))
@@ -46,6 +52,7 @@ public class AgentController {
     @PostMapping(value = "/ask", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<Map<String, Object>> askAgent(@RequestBody Map<String, String> request) {
         String query = request.get("query");
+        String petType = request.get("petType");
         
         if (query == null || query.trim().isEmpty()) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Query is required"));
@@ -55,16 +62,17 @@ public class AgentController {
             return Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Agent ARN not configured"));
         }
 
-        return Mono.fromCallable(() -> invokeAgent(query));
-    }
-
-    private Map<String, Object> invokeAgent(String query) throws Exception {
-        String prompt = query;
-        
-        if (nutritionAgentArn != null && !nutritionAgentArn.isEmpty()) {
-            prompt = query + "\n\nNote: Our nutrition specialist agent ARN is " + nutritionAgentArn;
+        if (petType != null && !petType.trim().isEmpty()) {
+            return nutritionServiceClient.getPetNutrition(petType)
+                    .flatMap(nutrition -> Mono.fromCallable(() -> invokeAgent(query, nutrition)))
+                    .switchIfEmpty(Mono.fromCallable(() -> invokeAgent(query, null)));
         }
 
+        return Mono.fromCallable(() -> invokeAgent(query, null));
+    }
+
+    private Map<String, Object> invokeAgent(String query, PetNutrition nutrition) throws Exception {
+        String prompt = buildPrompt(query, nutrition);
         String payload = String.format("{\"prompt\": \"%s\"}", escapeJson(prompt));
 
         InvokeAgentRuntimeRequest invokeRequest = InvokeAgentRuntimeRequest.builder()
@@ -98,6 +106,24 @@ public class AgentController {
                   .replace("\n", "\\n")
                   .replace("\r", "\\r")
                   .replace("\t", "\\t");
+    }
+
+    private String buildPrompt(String query, PetNutrition nutrition) {
+        StringBuilder prompt = new StringBuilder(query);
+        
+        prompt.append("\n\nIMPORTANT INSTRUCTIONS:");
+        prompt.append("\n- Only recommend products that exist in the provided nutrition data below.");
+        prompt.append("\n- If nutrition data is unavailable or empty, inform the customer that nutrition information is not available for this pet type instead of making recommendations.");
+        prompt.append("\n- Never fabricate or guess product recommendations.");
+        
+        if (nutrition != null && nutrition.getFacts() != null && !nutrition.getFacts().isEmpty()) {
+            prompt.append("\n\nAvailable Nutrition Information:\n");
+            prompt.append(nutrition.getFacts());
+        } else {
+            prompt.append("\n\nNutrition Data: NOT AVAILABLE - Do not make product recommendations.");
+        }
+        
+        return prompt.toString();
     }
 
     private String formatForUI(String response) {

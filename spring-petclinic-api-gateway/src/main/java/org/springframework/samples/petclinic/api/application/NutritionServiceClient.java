@@ -41,6 +41,11 @@ public class NutritionServiceClient {
                 .get()
                 .uri("http://nutrition-service/nutrition/" + petType + "/")
                 .retrieve()
-                .bodyToMono(PetNutrition.class);
+                .onStatus(
+                    status -> status.is4xxClientError() || status.is5xxServerError(),
+                    response -> Mono.empty()
+                )
+                .bodyToMono(PetNutrition.class)
+                .onErrorResume(throwable -> Mono.empty());
     }
 }
