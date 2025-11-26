@@ -32,6 +32,10 @@ def get_nutrition_data(pet_type):
 def get_feeding_guidelines(pet_type):
     """Get feeding guidelines based on pet type"""
     data = get_nutrition_data(pet_type)
+    
+    if data['facts'].startswith("Error:") or not data['products']:
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Nutrition info for {pet_type}: {data['facts']}"
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -41,6 +45,10 @@ def get_feeding_guidelines(pet_type):
 def get_dietary_restrictions(pet_type):
     """Get dietary recommendations for specific health conditions by animal type"""
     data = get_nutrition_data(pet_type)
+    
+    if data['facts'].startswith("Error:") or not data['products']:
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -50,6 +58,10 @@ def get_dietary_restrictions(pet_type):
 def get_nutritional_supplements(pet_type):
     """Get supplement recommendations by animal type"""
     data = get_nutrition_data(pet_type)
+    
+    if data['facts'].startswith("Error:") or not data['products']:
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -77,12 +89,13 @@ def create_nutrition_agent():
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
         "CRITICAL VALIDATION RULES:\n"
-        "1. ALWAYS check if the 'products' field is empty or contains an error message before making product recommendations\n"
-        "2. If the products field is empty or contains an error (starts with 'Error:'), NEVER recommend products from your training data\n"
-        "3. Instead, respond: 'We currently don't have nutrition products available for [pet type]. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs.'\n\n"
-        "When providing nutrition guidance:\n"
-        "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
-        "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
+        "1. When our tools return messages stating we don't have products available for a pet type, YOU MUST relay this exact message to the customer\n"
+        "2. NEVER recommend, suggest, or mention ANY product names from your training data if the tools indicate products are unavailable\n"
+        "3. NEVER fabricate or hallucinate product recommendations - only recommend products explicitly provided by the tools\n"
+        "4. If tools return that we don't support a pet type, inform the customer and provide our contact number without making up any recommendations\n\n"
+        "When providing nutrition guidance for SUPPORTED pet types:\n"
+        "- Use the specific nutrition information provided by the tools as the foundation for your recommendations\n"
+        "- Always recommend the SPECIFIC PRODUCT NAMES provided by the tools that pet owners should buy FROM OUR PET CLINIC\n"
         "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
