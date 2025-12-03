@@ -69,10 +69,14 @@ jobs:
         with:
           use_bedrock: "true" 
           # Set to any Bedrock Model ID 
-          model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+          # model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
           prompt_file: ${{ steps.prepare.outputs.prompt_file }}
-          mcp_config: ${{ steps.prepare.outputs.mcp_config_file }}
-          allowed_tools: ${{ steps.prepare.outputs.allowed_tools }}
+          # mcp_config: ${{ steps.prepare.outputs.mcp_config_file }}
+          # allowed_tools: ${{ steps.prepare.outputs.allowed_tools }}
+          claude_args: |
+            --model us.anthropic.claude-sonnet-4-5-20250929-v1:0
+            --mcp-config ${{ steps.prepare.outputs.mcp_config_file }}
+            --allowed-tools ${{ steps.prepare.outputs.allowed_tools }}
       
       # Retry if first attempt fails or times out
       - name: Run Claude Investigation - Attempt 2
