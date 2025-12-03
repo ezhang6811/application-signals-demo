@@ -64,8 +64,8 @@ jobs:
       - name: Run Claude Investigation - Attempt 1
         id: claude
         continue-on-error: true
-        uses: anthropics/claude-code-base-action@beta
-        timeout-minutes: 3
+        uses: anthropics/claude-code-base-action@e830e6e28fe6ef416cbf0fbb839a3ebd7bebaf95
+        timeout-minutes: 10
         with:
           use_bedrock: "true" 
           # Set to any Bedrock Model ID 
