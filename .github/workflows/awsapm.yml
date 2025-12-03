@@ -71,6 +71,7 @@ jobs:
           # Set to any Bedrock Model ID 
           # model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
           prompt_file: ${{ steps.prepare.outputs.prompt_file }}
+          show_full_output: "true"
           # mcp_config: ${{ steps.prepare.outputs.mcp_config_file }}
           # allowed_tools: ${{ steps.prepare.outputs.allowed_tools }}
           claude_args: |
