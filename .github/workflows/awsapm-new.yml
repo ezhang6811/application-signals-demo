@@ -30,8 +30,8 @@ jobs:
   awsapm-investigation:
     # Only run when @awsapm is mentioned
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@awsapm')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@awsapm') || contains(github.event.issue.title, '@awsapm')))
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@apmv2')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@apmv2') || contains(github.event.issue.title, '@apmv2')))
     runs-on: ubuntu-latest
 
     permissions:
@@ -57,7 +57,7 @@ jobs:
         id: prepare
         uses: aws-actions/application-observability-for-aws@v1
         with:
-          bot_name: "@awsapm"
+          bot_name: "@apmv2"
           cli_tool: "claude_code"
 
       # Step 2: Execute investigation with Claude Code (with retry on timeout)
