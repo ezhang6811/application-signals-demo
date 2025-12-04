@@ -12,8 +12,7 @@ def lambda_handler(event, context):
 
     query_params = event.get('queryStringParameters', {})
     current_span = trace.get_current_span()
-    # Add an attribute to the current span
-    owner_id = random.randint(1, 9)  # Generate a random value between 1 and 9
+    owner_id = random.randint(1, 9)
     current_span.set_attribute("owner.id", owner_id)
 
     record_id = query_params.get('recordId')
@@ -21,7 +20,13 @@ def lambda_handler(event, context):
     pet_id = query_params.get('petid')
 
     if owners is None or pet_id is None:
-        raise Exception('Missing owner or pet_id')
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Missing required query parameters: owners and petid'}),
+            'headers': {
+                'Content-Type': 'application/json'
+            }
+        }
 
     if record_id is None:
         return {
@@ -33,10 +38,8 @@ def lambda_handler(event, context):
         }
 
     try:
-        # Retrieve the item with the specified recordId
-        response = table.get_item(Key={'recordId': record_id})  # Assuming recordId is the primary key
+        response = table.get_item(Key={'recordId': record_id})
 
-        # Check if the item exists
         if 'Item' in response:
             return {
                 'statusCode': 200,
