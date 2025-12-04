@@ -30,6 +30,7 @@ import org.springframework.samples.petclinic.customers.aws.*;
 import org.springframework.samples.petclinic.customers.model.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.validation.constraints.Min;
 import java.util.List;
@@ -180,15 +181,20 @@ class PetResource {
 
         // enrich with nutrition
         PetNutrition petNutrition = null;
-        // will throw exception when the pet type is not found
-        ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
-        petNutrition = response.getBody();
-
-        if(petNutrition == null){
-            System.out.println("empty petNutrition");
-            return detail;
+        try {
+            ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
+            petNutrition = response.getBody();
+            
+            if(petNutrition != null){
+                detail.setNutritionFacts(petNutrition.getFacts());
+            } else {
+                log.warn("No nutrition data available for pet type: {}", detail.getType().getName());
+            }
+        } catch (HttpClientErrorException.NotFound ex) {
+            log.warn("Nutrition products not available for pet type: {}. Customer should be informed that products are not yet available.", detail.getType().getName());
+        } catch (Exception ex) {
+            log.error("Failed to retrieve nutrition data for pet type: {}", detail.getType().getName(), ex);
         }
-        detail.setNutritionFacts(petNutrition.getFacts());
 
         return detail;
     }
