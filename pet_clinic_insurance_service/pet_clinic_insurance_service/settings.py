@@ -117,6 +117,10 @@ DATABASES = {
         "PASSWORD": DB_PASSWORD,
         "HOST": os.environ.get("DB_SERVICE_HOST"),
         "PORT": os.environ.get("DB_SERVICE_PORT"),
+        "OPTIONS": {
+            "connect_timeout": 10,
+        },
+        "CONN_MAX_AGE": 600,
     }
 }
 
