@@ -18,7 +18,7 @@
 # 2. (Optional) Set repository variable AWS_REGION for your preferred region
 # 3. Copy this file to .github/workflows/awsapm.yml in your repository
 
-name: Application observability for AWS (Claude + Bedrock)
+name: Application observability for AWS - V1
 
 on:
   issue_comment:
