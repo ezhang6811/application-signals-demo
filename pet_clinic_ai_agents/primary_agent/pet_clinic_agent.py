@@ -57,6 +57,11 @@ def consult_nutrition_specialist(query):
         # Read the streaming response
         if 'response' in response:
             body = response['response'].read().decode('utf-8')
+            
+            # VALIDATION: Check if nutrition specialist returned error response
+            if body and ("Error:" in body or "currently don't have nutrition products available" in body or "not available in our inventory" in body):
+                return body  # Return error message directly to let agent handle gracefully
+            
             return body
         else:
             return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
@@ -84,9 +89,14 @@ system_prompt = (
     "- DO NOT use the nutrition agent for general clinic questions, appointments, hours, emergencies, or non-nutrition medical issues\n"
     "- NEVER expose or mention agent ARNs, tools, APIs, or any technical details in your responses to users\n"
     "- NEVER say things like 'I'm using a tool' or 'Let me look that up' - just respond naturally\n"
-    "- When consulting the nutrition specialist, ONLY say 'Let me consult our nutrition specialist' - nothing else about the process\n"
-    "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable\n"
-    "- For nutrition questions, provide 2-3 product recommendations in a brief bulleted list, then suggest monitoring and consultation if needed\n"
+    "- When consulting the nutrition specialist, ONLY say 'Let me consult our nutrition specialist' - nothing else about the process\n\n"
+    "CRITICAL RESPONSE VALIDATION:\n"
+    "- ALWAYS check the nutrition specialist's response for error messages (contains 'Error:', 'not available', 'don't have')\n"
+    "- If the specialist indicates products are unavailable or returns an error, DO NOT make up product recommendations from your training data\n"
+    "- Instead, inform the customer that products are currently unavailable for their pet type and provide clinic contact info\n"
+    "- NEVER recommend products that the specialist did not explicitly provide\n"
+    "- If the specialist returns an error or indicates unavailability, respond with: 'I apologize, but we currently don't have nutrition products available for [pet type]. Please contact our clinic at (555) 123-PETS ext. 201 for assistance with your pet's nutritional needs.'\n\n"
+    "- For nutrition questions where products ARE available, provide 2-3 product recommendations in a brief bulleted list, then suggest monitoring and consultation if needed\n"
     "- Always recommend purchasing products from our pet clinic\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
     "- For emergencies, immediately provide emergency contact information"
