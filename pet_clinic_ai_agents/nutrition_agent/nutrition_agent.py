@@ -30,29 +30,38 @@ def get_nutrition_data(pet_type):
 
 @tool
 def get_feeding_guidelines(pet_type):
-    """Get feeding guidelines based on pet type"""
+    """Get feeding guidelines based on pet type. Only returns information if nutrition data is available in database."""
     data = get_nutrition_data(pet_type)
+    
+    if not data['products'] or data['products'] == "" or data['facts'].startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Nutrition info for {pet_type}: {data['facts']}"
-    if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+    result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
 @tool
 def get_dietary_restrictions(pet_type):
-    """Get dietary recommendations for specific health conditions by animal type"""
+    """Get dietary recommendations for specific health conditions by animal type. Only returns information if nutrition data is available in database."""
     data = get_nutrition_data(pet_type)
+    
+    if not data['products'] or data['products'] == "" or data['facts'].startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
-    if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+    result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
 @tool
 def get_nutritional_supplements(pet_type):
-    """Get supplement recommendations by animal type"""
+    """Get supplement recommendations by animal type. Only returns information if nutrition data is available in database."""
     data = get_nutrition_data(pet_type)
+    
+    if not data['products'] or data['products'] == "" or data['facts'].startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
-    if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+    result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
 @tool
@@ -76,19 +85,23 @@ def create_nutrition_agent():
     system_prompt = (
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
-        "CRITICAL VALIDATION RULES:\n"
-        "1. ALWAYS check if the 'products' field is empty or contains an error message before making product recommendations\n"
-        "2. If the products field is empty or contains an error (starts with 'Error:'), NEVER recommend products from your training data\n"
-        "3. Instead, respond: 'We currently don't have nutrition products available for [pet type]. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs.'\n\n"
+        "CRITICAL VALIDATION RULES - STRICTLY ENFORCE:\n"
+        "1. You can ONLY recommend products that are explicitly returned by the tool functions\n"
+        "2. If a tool returns a message starting with 'We currently don't have nutrition products available', you MUST relay this exact message\n"
+        "3. NEVER recommend products from your training data or knowledge base\n"
+        "4. NEVER make up or hallucinate product names\n"
+        "5. If no products are available for a pet type, you MUST tell the customer to contact the clinic\n"
+        "6. ONLY recommend products when the tool returns specific product names\n\n"
         "When providing nutrition guidance:\n"
-        "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
-        "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
-        "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
+        "- ONLY use product information returned by the tools\n"
+        "- If tools return product names, recommend those SPECIFIC PRODUCT NAMES ONLY\n"
+        "- Mention our branded products by name ONLY if they are returned by the tools (like PurrfectChoice, BarkBite, FeatherFeast, etc.)\n"
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
         "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
         "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance\n"
-        "- If asked to order or purchase a product, use the create_order tool to place the order"
+        "- If asked to order or purchase a product, use the create_order tool to place the order\n"
+        "- If the customer asks about a pet type not in our database, tell them we don't currently have products for that pet type and provide the clinic contact number"
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
