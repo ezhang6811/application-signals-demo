@@ -14,8 +14,23 @@ async function main () {
   app.use(logger());
   app.use(express.json());
 
-  // GET: Find a NutritionFact by pet_type
+  // GET: Find a NutritionFact by pet_type (without trailing slash)
   app.get('/nutrition/:pet_type', async (req, res) => {
+    try {
+      const { pet_type } = req.params;
+      const fact = await NutritionFact.findOne({ pet_type });
+      if (!fact) {
+        return res.status(404).json({ message: 'nutrition fact not found for the given pet_type' });
+      }
+      res.status(200).json(fact);
+    } catch (error) {
+      req.log.error(error);
+      res.status(500).json({ message: 'failed to fetch nutrition fact', error });
+    }
+  });
+
+  // GET: Find a NutritionFact by pet_type (with trailing slash)
+  app.get('/nutrition/:pet_type/', async (req, res) => {
     try {
       const { pet_type } = req.params;
       const fact = await NutritionFact.findOne({ pet_type });
