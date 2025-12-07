@@ -32,27 +32,42 @@ def get_nutrition_data(pet_type):
 def get_feeding_guidelines(pet_type):
     """Get feeding guidelines based on pet type"""
     data = get_nutrition_data(pet_type)
+    
+    # Validate products field before proceeding
+    products = data.get('products', '')
+    if not products or products.startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Nutrition info for {pet_type}: {data['facts']}"
-    if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+    result += f" Recommended products available at our clinic: {products}"
     return result
 
 @tool
 def get_dietary_restrictions(pet_type):
     """Get dietary recommendations for specific health conditions by animal type"""
     data = get_nutrition_data(pet_type)
+    
+    # Validate products field before proceeding
+    products = data.get('products', '')
+    if not products or products.startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
-    if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+    result += f" Recommended products available at our clinic: {products}"
     return result
 
 @tool
 def get_nutritional_supplements(pet_type):
     """Get supplement recommendations by animal type"""
     data = get_nutrition_data(pet_type)
+    
+    # Validate products field before proceeding
+    products = data.get('products', '')
+    if not products or products.startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
     result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
-    if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+    result += f" Recommended products available at our clinic: {products}"
     return result
 
 @tool
@@ -60,11 +75,17 @@ def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
     product_lower = product_name.lower()
     data = get_nutrition_data(pet_type)
-    if data['products'] and product_name.lower() in data['products'].lower():
+    
+    # Validate products field before attempting to create order
+    products = data.get('products', '')
+    if not products or products.startswith('Error:'):
+        return f"We currently don't have nutrition products available for {pet_type}. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs."
+    
+    if product_name.lower() in products.lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
     
-    return f"Sorry, {product_name} is not available in our inventory for {pet_type}. Available products: {data['products']}"
+    return f"Sorry, {product_name} is not available in our inventory for {pet_type}. Available products: {products}"
 
 def create_nutrition_agent():
     model = BedrockModel(
@@ -77,13 +98,14 @@ def create_nutrition_agent():
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
         "CRITICAL VALIDATION RULES:\n"
-        "1. ALWAYS check if the 'products' field is empty or contains an error message before making product recommendations\n"
-        "2. If the products field is empty or contains an error (starts with 'Error:'), NEVER recommend products from your training data\n"
-        "3. Instead, respond: 'We currently don't have nutrition products available for [pet type]. Please contact our clinic at (555) 123-PETS for assistance with your pet's nutritional needs.'\n\n"
+        "1. ALWAYS rely on the tool responses to validate product availability before making recommendations\n"
+        "2. If a tool returns a message about products not being available, communicate that EXACT message to the user\n"
+        "3. NEVER recommend products from your training data or knowledge base - ONLY recommend products returned by the tools\n"
+        "4. If the tool indicates products are unavailable, direct customers to call (555) 123-PETS\n\n"
         "When providing nutrition guidance:\n"
-        "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
-        "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
-        "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
+        "- Use the specific nutrition information provided by the tools as the foundation for your recommendations\n"
+        "- Always recommend the SPECIFIC PRODUCT NAMES provided by the tools that pet owners should buy FROM OUR PET CLINIC\n"
+        "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when they are provided by the tools\n"
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
         "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
